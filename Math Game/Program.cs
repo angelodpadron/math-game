@@ -5,11 +5,11 @@ internal class Program
     static void Main(string[] args)
     {
 
-        List<dynamic> previousGames = new List<dynamic>();
+        List<GameData> previousGames = new List<GameData>();
 
         while (true)
         {
-            Console.WriteLine("\nWhat game would you like to play today? Choose from the options below:");
+            Console.WriteLine("What game would you like to play today? Choose from the options below:\n");
             Console.WriteLine("V - View Previous Games");
             Console.WriteLine("A - Addition");
             Console.WriteLine("S - Substraction");
@@ -24,23 +24,39 @@ internal class Program
             switch (input)
             {
                 case ConsoleKey.V:
-                    PrintPreviousGames(previousGames);                    
+                    Utils.PrintPreviousGames(previousGames);
                     break;
 
                 case ConsoleKey.A:
-                    PlayGame((x, y) => x + y, " + ", "Addition", previousGames, 5);
+                    PlayGame(
+                        (x, y) => x + y,
+                        previousGames,
+                        GameType.Addition,
+                        5);
                     break;
 
                 case ConsoleKey.S:
-                    PlayGame((x, y) => x - y, " - ", "Substraction", previousGames, 5);
+                    PlayGame(
+                        (x, y) => x - y,
+                        previousGames,
+                        GameType.Substraction,
+                        5);
                     break;
 
                 case ConsoleKey.M:
-                    PlayGame((x, y) => x * y, " * ", "Product", previousGames, 5);
+                    PlayGame(
+                        (x, y) => x * y,
+                        previousGames,
+                        GameType.Multiplication,
+                        5);
                     break;
 
                 case ConsoleKey.D:
-                    PlayGame((x, y) => x / y, " / ", "Division", previousGames, 5);
+                    PlayGame(
+                        (x, y) => x / y,
+                        previousGames,
+                        GameType.Division,
+                        5);
                     break;
 
                 case ConsoleKey.Q:
@@ -50,26 +66,12 @@ internal class Program
         }
     }
 
-    private static void ConfirmDialog(string message)
-    {
-        Console.WriteLine("\n" + message);
-        Console.ReadKey();
-        Console.Clear();
-    }
 
-    private static void PrintPreviousGames(List<dynamic> previousGames)
-    {
-        if (previousGames.Count == 0)
-        {
-            ConfirmDialog("No saved games. Press a button to go back to the main menu...");
-            return;
-        }
-
-        previousGames.ForEach(x => Console.WriteLine(x.Date + " - " + x.Game + " - " + x.Points));
-        ConfirmDialog("Press a button to go back to the main menu...");
-    }
-
-    private static void PlayGame(Func<int, int, int> operation, string opSymbol, string gameName, List<dynamic> previousGames, int rounds)
+    private static void PlayGame(
+        Func<int, int, int> operation,
+        List<GameData> previousGames,
+        GameType gameType,
+        int rounds)
     {
 
         int points = 0;
@@ -78,34 +80,55 @@ internal class Program
         {
 
             var random = new Random();
-            int x = random.Next(1, 10);
-            int y = random.Next(1, 10);
 
-            int result = operation(x, y);
+            int x = random.Next(0, 100);
+            int y = random.Next(0, 100);
+
+            if (gameType == GameType.Division)
+            {
+                var integerDivisors = Enumerable.Range(1, 100).Where(n => x % n == 0).ToList();
+                y = integerDivisors[random.Next(0, integerDivisors.Count)];
+            }
+
+            string opSymbol = Utils.GetOperationSymbol(gameType);
+
             Console.WriteLine(x + opSymbol + y);
 
-            if (Convert.ToInt32(Console.ReadLine()) == result)
+            int result = operation(x, y);
+
+            try
             {
-                ConfirmDialog("Correct! Press a button for the next question...");
-                points ++;                
+
+                if (Convert.ToInt32(Console.ReadLine()) == result)
+                {
+                    Utils.ConfirmDialog("Correct! Press a button for the next question...");
+                    points++;
+                }
+                else
+                {
+                    Utils.ConfirmDialog($"Nicen't!... The correct answer was {result}. \nPress a button for the next question...");
+                }
             }
-            else
+            catch (FormatException)
             {
-                ConfirmDialog("Nicen't!... The correct answer was " + result + "\n" + "Press a button for the next question...");
+                Utils.ConfirmDialog("Try it again but using a number instead :) \nPress a button for the next question...");
+
             }
+
 
         }
 
-        previousGames.Add(new
+        previousGames.Add(new GameData
         {
-            Game = gameName,
+            GameName = gameType,
             Date = DateTime.Now,
             Points = points
         });
 
-        ConfirmDialog("And that's it. Total points for this game: " + points + "\n" + "Press a button to go back to the main menu");
+        Utils.ConfirmDialog($"\nAnd that's it! Total points for this game: {points} \nPress a button to go back to the main menu...");
 
     }
+
 
 
 }
